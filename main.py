@@ -4,7 +4,7 @@ from fraudCheck import nameCheck
 
 # --- SETTINGS ---
 fraudProtection = True
-fileName = "test.csv"
+fileName = "generalMT24.csv"
 
 # ----------------
 
@@ -20,12 +20,13 @@ else:
 #need to extract just the vote tables from the csv
 #should be the same amount of added fields every time?
 numCols = len(protectedDF.columns)
-votesDF = protectedDF.iloc[:, 6:numCols:1]
+votesDF = protectedDF.iloc[:, 5:numCols:1]
 
 
-
-
+#print(protectedDF)
+#print(protectedDF.iloc[:, 5:numCols:1])
 for series_name, series in votesDF.items():
+    print(series_name.rstrip())
     run_election(series_name.rstrip(), series)
 
 
