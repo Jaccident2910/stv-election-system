@@ -50,8 +50,6 @@ def tiebreak(cand1, cand2):
 def run_election(name, series):
     #print(name + ":")
     votes = []
-    print("series: ")
-    print(series)
     for index, vote in series.items():
         voteAsList = process_vote(vote)
         votes.append(voteAsList)
