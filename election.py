@@ -124,7 +124,9 @@ def run_election(name, series):
                 if (votes_dict[cand] < votes_dict[lowest] and cand != ron_keyword and (not (cand in failed_candidates))):
                     lowest = cand              
                 elif (cand != ron_keyword and votes_dict[cand] == votes_dict[lowest] and (not (cand in failed_candidates))):
-                    lowest = tiebreak(lowest, cand)
+                    # TODO: implement proper tiebreaking system
+                    print(f"This election has a tie between {lowest} and {cand}. Get the IT Officer")
+                    return
         failed_candidates.append(lowest)
         print(lowest + " was eliminated!")
         i += 1
