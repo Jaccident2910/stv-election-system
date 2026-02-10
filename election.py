@@ -37,6 +37,14 @@ def process_ballot(ballot_str):
 
 
 def get_candidate(vote_list, failed_candidates):
+    """
+    Goes through a list of ordered votes in a ballot and identifies the highest-ranked non-eliminated candidate.
+    
+    Parameters
+    - vote_list (list): an ordered list of candidate preferences for the given ballot
+    - failed_candidates (list): a list of eliminated candidates from the election
+    """
+
     i = 0
     #loop until a candidate who hasn't been knocked out is found
     while vote_list[i] in failed_candidates:
@@ -44,18 +52,42 @@ def get_candidate(vote_list, failed_candidates):
     return(vote_list[i])
     
 def showVote(name, stage, vote_dict):
+    """
+    Formats and prints the votes at a given stage of the election.
+    
+    Parameters:
+    - name (str): the role for which the election is being held
+    - stage (int): the STV round of the election being held
+    - vote_dict (dict): a dictionary with candidates and vote totals
+    """
     print("Votes for " + name + " in Stage " + str(stage) + ":")
     for cand in vote_dict:
         print(cand + ": " + str(vote_dict[cand]))
 
 def tiebreak(cand1, cand2):
-    #ties are extremely unlikely but still possible.
+    """
+    Given two tied candidates, prints winner of tiebreaker and returns loser.
+    
+    Parameters
+    - cand1 (str): first tied candidate
+    - cand2 (str): second tied candidate
+
+    Returns
+    - lowest: the candidate who loses the tiebreak
+    """
     # TODO: ask Secretary how tiebreaks should be resolved.
     print("tie broken in favour of " + cand2)
     return(cand1) # placeholder decision
 
 
 def run_election(name, series):
+    """
+    Runs election for a given role and prints winners (or lack thereof).
+    
+    Parameters
+    - name (str): the role for which the election is being held
+    - series (Pandas.series): a Pandas series of ballots
+    """
     #print(name + ":")
     votes = []
     for _, ballot in series.dropna().items():
