@@ -2,47 +2,55 @@ import pandas
 from math import floor
 
 # --- SETTINGS ---
-ron_keyword = 'RON'
+ron_keyword = 'RON (Re-Open Nominations)'
 
 
 # ----------------
 
-def process_vote(vote):
-    #converts vote string into a python list
+def process_ballot(ballot_str):
+    """
+    Converts ballot string into a python list of votes
+    
+    Parameters
+    - ballot_str (str): A string containing the information from one ballot in the election.
+
+    Returns
+    - vote_list (list): A list containing the ballot's votes, in descending order of preference.
+    """
 
     #print(vote)
     #ignore the poor choice of var name
-    length = len(vote)
+    length = len(ballot_str)
     i = 0
-    voteList = []
-    currentItem = ""
-    while (i < length):
+    vote_list = []
+    curr = ""
+    while i < length:
         #loop invariant left as exercise to reader
-        if vote[i] == ";":
-            voteList.append(currentItem)
-            currentItem = ""
+        if ballot_str[i] == ";":
+            vote_list.append(curr)
+            curr = ""
         else:
-            currentItem += vote[i]
+            curr += ballot_str[i]
         #don't forget to increment i
         i += 1
-    return(voteList)
+    return vote_list
 
 
-def get_candidate(vList, failedCandidates):
+def get_candidate(vote_list, failed_candidates):
     i = 0
     #loop until a candidate who hasn't been knocked out is found
-    while(vList[i] in failedCandidates):
+    while vote_list[i] in failed_candidates:
         i += 1
-    return(vList[i])
+    return(vote_list[i])
     
-def showVote(name, stage, vDict):
+def showVote(name, stage, vote_dict):
     print("Votes for " + name + " in Stage " + str(stage) + ":")
-    for cand in vDict:
-        print(cand + ": " + str(vDict[cand]))
+    for cand in vote_dict:
+        print(cand + ": " + str(vote_dict[cand]))
 
 def tiebreak(cand1, cand2):
     #ties are extremely unlikely but still possible.
-    # TODO: ask Danny (Secretary) how tiebreaks should be resolved.
+    # TODO: ask Secretary how tiebreaks should be resolved.
     print("tie broken in favour of " + cand2)
     return(cand1) # placeholder decision
 
@@ -50,99 +58,102 @@ def tiebreak(cand1, cand2):
 def run_election(name, series):
     #print(name + ":")
     votes = []
-    for index, vote in series.items():
-        voteAsList = process_vote(vote)
-        votes.append(voteAsList)
+    for _, ballot in series.dropna().items():
+        vote_list = process_ballot(ballot)
+        votes.append(vote_list)
     #now we have a list of all the votes: time to STV
-    votesDict = {}
+    votes_dict = {}
     #get names of candidates
     for name2 in votes[0]:
         if name2 != ron_keyword:
-            votesDict[name2] = 0
-    votesDict[ron_keyword] = 0
-    failedCandidates = []
+            votes_dict[name2] = 0
+    votes_dict[ron_keyword] = 0
+    failed_candidates = []
     i = 0
     while (i < len(votes[0])-2):
         #reset count
         for name2 in votes[0]:
             if name2 != ron_keyword:
-                votesDict[name2] = 0
-        votesDict[ron_keyword] = 0
+                if name2 in votes_dict and name2 in failed_candidates:
+                    del votes_dict[name2]
+                else:
+                    votes_dict[name2] = 0
+        votes_dict[ron_keyword] = 0
         #count votes
         for vote in votes:
-            theVote = get_candidate(vote, failedCandidates)
-            votesDict[theVote] += 1
-        showVote(name, i, votesDict)
+            theVote = get_candidate(vote, failed_candidates)
+            votes_dict[theVote] += 1
+        showVote(name, i, votes_dict)
         lowest = None
-        for cand in votesDict:
+        for cand in votes_dict:
             if lowest == None:
                 lowest = cand
             else:
-                if (votesDict[cand] < votesDict[lowest] and cand != ron_keyword and (not (cand in failedCandidates))):
+                if (votes_dict[cand] < votes_dict[lowest] and cand != ron_keyword and (not (cand in failed_candidates))):
                     lowest = cand              
-                elif (cand != ron_keyword and votesDict[cand] == votesDict[lowest] and (not (cand in failedCandidates))):
+                elif (cand != ron_keyword and votes_dict[cand] == votes_dict[lowest] and (not (cand in failed_candidates))):
                     lowest = tiebreak(lowest, cand)
-        failedCandidates.append(lowest)
+        failed_candidates.append(lowest)
         print(lowest + " was eliminated!")
         i += 1
     #time to find the winner
     winner = None
-    winnerCheck = 0
-    for cand in votesDict:
-        if cand != ron_keyword and not (cand in failedCandidates):
+    winner_check = 0
+    for cand in votes_dict:
+        if cand != ron_keyword and not (cand in failed_candidates):
             winner = cand
-            winnerCheck += 1
-    if (winnerCheck == 1):
-        if len(votesDict) < 3:
+            winner_check += 1
+    if (winner_check == 1):
+        if len(votes_dict) < 3:
             #gotta have the logic for just 1 person running
             for vote in votes:
-                theVote = get_candidate(vote, failedCandidates)
-                votesDict[theVote] += 1
-            showVote(name, 0, votesDict)
-        if votesDict[winner] >= votesDict[ron_keyword]:
+                theVote = get_candidate(vote, failed_candidates)
+                votes_dict[theVote] += 1
+            showVote(name, 0, votes_dict)
+        if votes_dict[winner] >= votes_dict[ron_keyword]:
             print(winner + " is the winner of the election for " + name + "!!!\n")
         else:
-            print("RON has won the election. Time to reopen nominations.")
+            print("RON has won the election. Time to reopen nominations.\n")
     else: 
-        print("This election has more than one winner, or no winners at all. Get Jack.")
-    #showVote(name, i, votesDict)    
+        print("This election has more than one winner, or no winners at all. Get the IT officer.\n")
+    #showVote(name, i, votes_dict)    
     #print(data)
 
-def get_multiseat_candidate(vList, failedCandidates, winningCandidates):
+def get_multiseat_candidate(vList, failed_candidates, winningCandidates):
     i = 0
     #loop until a candidate who hasn't been knocked out or beat the quota is found
-    while(vList[i][0] in failedCandidates or vList[i][0] in winningCandidates):
+    while(vList[i][0] in failed_candidates or vList[i][0] in winningCandidates):
         i += 1
     return(vList[i:])
     
-def redistribute_votes(votesDict, winningCandidates, failedCandidates, quota):
+def redistribute_votes(votes_dict, winningCandidates, failed_candidates, quota):
     #Assume both winning and failed does not have RON in it
-    assert(not (ron_keyword in winningCandidates or ron_keyword in failedCandidates))
+    assert(not (ron_keyword in winningCandidates or ron_keyword in failed_candidates))
     for winner in winningCandidates:
-        winnerMargin = len(votesDict[winner]) - quota
-        winMultiplier = winnerMargin/votesDict[winner]
-        for voter , vMultiplier in votesDict[winner]:
-            newVotes = get_multiseat_candidate(voter, winningCandidates, failedCandidates)
-            votesDict[newVotes[0]].append((newVotes, vMultiplier * winMultiplier))
-        votesDict.pop(winner)
-    return(votesDict)
+        winnerMargin = len(votes_dict[winner]) - quota
+        winMultiplier = winnerMargin/votes_dict[winner]
+        for voter , vMultiplier in votes_dict[winner]:
+            newVotes = get_multiseat_candidate(voter, winningCandidates, failed_candidates)
+            votes_dict[newVotes[0]].append((newVotes, vMultiplier * winMultiplier))
+        votes_dict.pop(winner)
+    return(votes_dict)
 
 
-
+# DEPRECATED as we no longer run multirole elections
 def run_multirole_election(name, series, num_cands):
     votes = []
-    for index, vote in series.items():
-        voteAsList = process_vote(vote)
+    for _, ballot in series.dropna().items():
+        voteAsList = process_ballot(ballot)
         votes.append(voteAsList)
     num_votes = len(votes)
     quota = floor(num_votes / (num_cands + 1)) + 1
-    votesDict = {}
+    votes_dict = {}
     #get names of candidates
     for name2 in votes[0]:
         if name2 != ron_keyword:
-            votesDict[name2] = []
-    votesDict[ron_keyword] = []
-    failedCandidates = []
+            votes_dict[name2] = []
+    votes_dict[ron_keyword] = []
+    failed_candidates = []
     winningCandidates = []
    # Step 1: Count all the votes, store each vote in the "dict" as the vote list and a multiplier
    # Step 2: For each candidate over the quota, do multiplier *= (numVotes - quota)/numVotes for each voter
@@ -155,24 +166,24 @@ def run_multirole_election(name, series, num_cands):
     for vote in votes:
         #store each vote as a pair, with the list of votes in [0] and multiplier in [1]
         voteItem = (vote, 1)
-        votesDict[vote[0]].append(voteItem)
+        votes_dict[vote[0]].append(voteItem)
     #set up loop
     while(len(winningCandidates) < quota and (not ron_keyword in winningCandidates)):
-        assert(len(votesDict) > 1)
+        assert(len(votes_dict) > 1)
         #check for winners
-        for cand in votesDict:
+        for cand in votes_dict:
             #this is wrong
-            #if len(votesDict[cand]) >= quota:
+            #if len(votes_dict[cand]) >= quota:
             #    winningCandidates.append(cand)
             #this is right
             #get sum of all votes
             voteSum = 0
-            for vList, multiplier in votesDict[cand]:
+            for vList, multiplier in votes_dict[cand]:
                 assert vList[0] == cand
                 voteSum += multiplier
             if voteSum >= quota:
                 winningCandidates.append(cand)
-        votesDict = redistribute_votes(votesDict, winningCandidates, failedCandidates)
+        votes_dict = redistribute_votes(votes_dict, winningCandidates, failed_candidates)
 
     
     

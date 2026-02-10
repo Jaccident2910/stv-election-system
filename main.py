@@ -4,8 +4,8 @@ from fraudCheck import nameCheck
 
 # --- SETTINGS ---
 fraudProtection = True
-fileName = "test.csv"
-beginningColumnIndex = 6
+fileName = "Anonymized_MT25.csv"
+beginningColumnIndex = 5
 
 # ----------------
 
